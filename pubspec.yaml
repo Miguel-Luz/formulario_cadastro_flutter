@@ -25,7 +25,11 @@ dependencies:
     sdk: flutter
 
   dio: ^3.0.9
-  cnpj_cpf: ^0.0.2
+  cnpj_cpf_helper: ^1.0.8
+  cnpj_cpf_formatter: ^1.0.8
+  crypto: ^2.1.4
+  email_validator: ^1.0.4
+
 
 
   # The following adds the Cupertino Icons font to your application.

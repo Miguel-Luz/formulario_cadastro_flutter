@@ -5,4 +5,11 @@ class Usuario {
   String email;
   String cpf;
   Endereco endereco;
+
+  Usuario({
+    nome,
+    email,
+    cpf,
+    endereco,
+  });
 }
