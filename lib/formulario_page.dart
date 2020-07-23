@@ -1,9 +1,8 @@
+import 'package:cnpj_cpf_formatter/cnpj_cpf_formatter.dart';
+import 'package:cnpj_cpf_helper/cnpj_cpf_helper.dart';
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:formulario_cadastro/entidades/endereco.dart';
-
-import 'package:cnpj_cpf/cnpj_cpf.dart';
-
 import 'entidades/usuario.dart';
 
 class FormularioPage extends StatefulWidget {
@@ -12,7 +11,10 @@ class FormularioPage extends StatefulWidget {
 }
 
 class _FormularioPageState extends State<FormularioPage> {
-  String cpfErro;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _formKey = GlobalKey<FormState>();
+
+  Usuario _usuario = Usuario();
 
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
@@ -25,7 +27,24 @@ class _FormularioPageState extends State<FormularioPage> {
   final ufController = TextEditingController();
   final paisController = TextEditingController();
 
-  void _buscarCEP(String cep, BuildContext context) async {
+  void _mostrarSnackBar(String mensagem) {
+    _scaffoldKey.currentState.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          mensagem,
+          style: TextStyle(
+            fontSize: 18,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _buscarCEP(String cep) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -52,6 +71,7 @@ class _FormularioPageState extends State<FormularioPage> {
     );
 
     var dio = Dio();
+
     try {
       var resposta = await dio.get('https://viacep.com.br/ws/$cep/json/');
       var endereco = resposta.data;
@@ -59,25 +79,29 @@ class _FormularioPageState extends State<FormularioPage> {
       bairroController.text = endereco['bairro'];
       cidadeController.text = endereco['localidade'];
       ufController.text = endereco['uf'];
+      paisController.text = 'Brasil';
     } catch (e) {
-      Scaffold.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(
-            'CEP não encontrado!!',
-            style: TextStyle(fontSize: 18, color: Colors.white),
-          ),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      _mostrarSnackBar('CEP não encontrado!!');
     } finally {
       Navigator.of(context).pop();
     }
   }
 
+  void _clickBotao() {
+    if (!_formKey.currentState.validate()) {
+      _mostrarSnackBar('Informações inválidas');
+      return;
+    }
+
+    _formKey.currentState.save();
+    _mostrarSnackBar('Dados válidos');
+  }
+
   @override
   void dispose() {
+    nomeController.dispose();
+    emailController.dispose();
+    cpfController.dispose();
     cepController.dispose();
     ruaController.dispose();
     numeroController.dispose();
@@ -91,6 +115,7 @@ class _FormularioPageState extends State<FormularioPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Colors.red,
         title: Text('Formulário de cadastro'),
@@ -103,185 +128,236 @@ class _FormularioPageState extends State<FormularioPage> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Column(
-                    children: <Widget>[
-                      TextField(
-                        controller: nomeController,
-                        decoration: InputDecoration(
-                          labelText: 'Nome completo',
-                          border: OutlineInputBorder(),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: <Widget>[
+                        TextFormField(
+                          controller: nomeController,
+                          decoration: InputDecoration(
+                            labelText: 'Nome completo',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (valor) {
+                            if (valor.length < 3) return 'Nome muito curto';
+                            if (valor.length > 30) return 'Nome muito longo';
+
+                            return null;
+                          },
+                          onSaved: (valor) {
+                            _usuario.nome = valor;
+                          },
                         ),
-                      ),
-                      SizedBox(height: 15),
-                      TextField(
-                        controller: emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
+                        SizedBox(height: 15),
+                        TextFormField(
+                          controller: emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (valor) {
+                            if (!EmailValidator.validate(valor))
+                              return 'E-mail válido';
+
+                            return null;
+                          },
+                          onSaved: (valor) {
+                            _usuario.email = valor;
+                          },
                         ),
-                      ),
-                      SizedBox(height: 15),
-                      TextField(
-                        controller: cpfController,
-                        decoration: InputDecoration(
+                        SizedBox(height: 15),
+                        TextFormField(
+                          controller: cpfController,
+                          decoration: InputDecoration(
                             labelText: 'CPF',
                             border: OutlineInputBorder(),
-                            errorText: cpfErro),
-                        onChanged: (valor) {
-                          if (!CnpjCpf.isValid(valor)) {
-                            setState(() {
-                              cpfErro = 'CPF inválido';
-                            });
-                          } else {
-                            setState(() {
-                              cpfErro = null;
-                            });
-                          }
-                        },
-                      ),
-                      SizedBox(height: 15),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: cepController,
-                              decoration: InputDecoration(
-                                labelText: 'CEP',
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
-                            ),
                           ),
-                          SizedBox(width: 10),
-                          Builder(
-                            builder: (ctx) {
-                              return FlatButton(
-                                onPressed: () {
-                                  if (cepController.text.isNotEmpty) {
-                                    _buscarCEP(cepController.text, ctx);
-                                  }
+                          validator: (valor) {
+                            if (!CnpjCpfBase.isCpfValid(valor))
+                              return 'CPF inválido';
+
+                            return null;
+                          },
+                          onSaved: (valor) {
+                            _usuario.cpf = valor;
+                          },
+                          inputFormatters: [
+                            CnpjCpfFormatter(eDocumentType: EDocumentType.CPF)
+                          ],
+                        ),
+                        SizedBox(height: 15),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: TextFormField(
+                                controller: cepController,
+                                decoration: InputDecoration(
+                                  labelText: 'CEP',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (valor) {
+                                  if (valor.length != 8) return 'CEP Inválido';
+
+                                  return null;
                                 },
-                                child: Text('Buscar CEP'),
-                              );
-                            },
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 15),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            flex: 2,
-                            child: TextField(
-                              controller: ruaController,
-                              decoration: InputDecoration(
-                                labelText: 'Rua',
-                                border: OutlineInputBorder(),
+                                onSaved: (valor) {
+                                  _usuario.endereco.cep = valor;
+                                },
                               ),
                             ),
-                          ),
-                          SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: numeroController,
-                              decoration: InputDecoration(
-                                labelText: 'Número',
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
+                            SizedBox(width: 10),
+                            FlatButton(
+                              onPressed: () {
+                                if (cepController.text.isNotEmpty) {
+                                  _buscarCEP(cepController.text);
+                                }
+                              },
+                              child: Text('Buscar CEP'),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 15),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: bairroController,
-                              decoration: InputDecoration(
-                                labelText: 'Bairro',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 15),
-                          Expanded(
-                            child: TextField(
-                              controller: cidadeController,
-                              decoration: InputDecoration(
-                                labelText: 'Cidade',
-                                border: OutlineInputBorder(),
+                          ],
+                        ),
+                        SizedBox(height: 15),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: ruaController,
+                                decoration: InputDecoration(
+                                  labelText: 'Rua',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (valor) {
+                                  if (valor.length < 3)
+                                    return 'Rua muito curta';
+
+                                  return null;
+                                },
+                                onSaved: (valor) {
+                                  _usuario.endereco.rua = valor;
+                                },
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 15),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: TextField(
-                              controller: ufController,
-                              decoration: InputDecoration(
-                                labelText: 'UF',
-                                border: OutlineInputBorder(),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: numeroController,
+                                decoration: InputDecoration(
+                                  labelText: 'Número',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (valor) {
+                                  if (int.tryParse(valor) == null)
+                                    return 'Número inválido';
+
+                                  return null;
+                                },
+                                onSaved: (valor) {
+                                  _usuario.endereco.numero =
+                                      int.tryParse(valor);
+                                },
                               ),
                             ),
-                          ),
-                          SizedBox(width: 15),
-                          Expanded(
-                            child: TextField(
-                              controller: paisController,
-                              decoration: InputDecoration(
-                                labelText: 'Pais',
-                                border: OutlineInputBorder(),
+                          ],
+                        ),
+                        SizedBox(height: 15),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: TextFormField(
+                                controller: bairroController,
+                                decoration: InputDecoration(
+                                  labelText: 'Bairro',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (valor) {
+                                  if (valor.length < 3) return 'Muito curto';
+
+                                  return null;
+                                },
+                                onSaved: (valor) {
+                                  _usuario.endereco.bairro = valor;
+                                },
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            SizedBox(width: 15),
+                            Expanded(
+                              child: TextFormField(
+                                controller: cidadeController,
+                                decoration: InputDecoration(
+                                  labelText: 'Cidade',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (valor) {
+                                  if (valor.length < 3) return 'Muito curto';
+
+                                  return null;
+                                },
+                                onSaved: (valor) {
+                                  _usuario.endereco.cidade = valor;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 15),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: TextFormField(
+                                controller: ufController,
+                                decoration: InputDecoration(
+                                  labelText: 'UF',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (valor) {
+                                  if (valor.length != 2) return 'UF inválido';
+
+                                  return null;
+                                },
+                                onSaved: (valor) {
+                                  _usuario.endereco.uf = valor;
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 15),
+                            Expanded(
+                              child: TextFormField(
+                                controller: paisController,
+                                decoration: InputDecoration(
+                                  labelText: 'Pais',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (valor) {
+                                  if (valor.toUpperCase() != 'BRASIL')
+                                    return 'País inválido';
+
+                                  return null;
+                                },
+                                onSaved: (valor) {
+                                  _usuario.endereco.pais = valor;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
             Container(
               width: double.maxFinite,
-              child: Builder(
-                builder: (ctx) {
-                  return OutlineButton(
-                    onPressed: () {
-                      var usuario = Usuario()
-                        ..nome = nomeController.text
-                        ..email = emailController.text
-                        ..cpf = cpfController.text
-                        ..endereco = Endereco()
-                        ..endereco.cep = cepController.text
-                        ..endereco.rua = ruaController.text
-                        ..endereco.bairro = bairroController.text
-                        ..endereco.cidade = cidadeController.text
-                        ..endereco.uf = ufController.text
-                        ..endereco.pais = paisController.text;
-
-                      Scaffold.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Usuario ${usuario?.nome ?? ''} foi criado',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                          backgroundColor: Colors.red,
-                          duration: Duration(seconds: 3),
-                        ),
-                      );
-                    },
-                    child: Text('Cadastrar'),
-                    borderSide: BorderSide(
-                      color: Colors.red,
-                    ),
-                    textColor: Colors.red,
-                  );
-                },
+              child: OutlineButton(
+                onPressed: _clickBotao,
+                child: Text('Cadastrar'),
+                borderSide: BorderSide(
+                  color: Colors.red,
+                ),
+                textColor: Colors.red,
               ),
             )
           ],
