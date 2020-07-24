@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import './services/helper_service.dart';
 import './services/cep_service.dart';
 import './entidades/usuario.dart';
+import 'entidades/usuario.dart';
 
 class FormularioPage extends StatefulWidget {
   @override
@@ -27,8 +28,8 @@ class _FormularioPageState extends State<FormularioPage> {
   final _cidadeController = TextEditingController();
   final _ufController = TextEditingController();
   final _paisController = TextEditingController();
-  String _imageUrl;
   String _urlBase = 'https://www.gravatar.com/avatar/';
+  String _imageUrl;
 
   @override
   void initState() {
@@ -389,6 +390,7 @@ class _FormularioPageState extends State<FormularioPage> {
                         _ufController.clear();
                         _paisController.clear();
                         _formKey.currentState.reset();
+                        _usuario = Usuario();
                       },
                       child: Text('Limpar'),
                       borderSide: BorderSide(
