@@ -24,10 +24,4 @@ class Endereco {
     uf = map['uf'];
     pais = 'Brasil';
   }
-
-  @override
-  String toString() {
-    return '${rua ?? ''}, ${numero?.toString() ?? ''}, '
-        'Bairro ${bairro ?? ''}, ${cidade ?? ''} - ${uf ?? ''}. ${pais ?? ''}';
-  }
 }

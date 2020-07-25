@@ -3,10 +3,8 @@ import 'package:cnpj_cpf_helper/cnpj_cpf_helper.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import './services/helper_service.dart';
-import './services/cep_service.dart';
-import './entidades/usuario.dart';
-import 'entidades/usuario.dart';
+import '../services/cep_service.dart';
+import '../entidades/usuario.dart';
 
 class FormularioPage extends StatefulWidget {
   @override
@@ -28,21 +26,10 @@ class _FormularioPageState extends State<FormularioPage> {
   final _cidadeController = TextEditingController();
   final _ufController = TextEditingController();
   final _paisController = TextEditingController();
-  String _urlBase = 'https://www.gravatar.com/avatar/';
-  String _imageUrl;
 
   @override
   void initState() {
     super.initState();
-    _imageUrl = '$_urlBase${HelperService.randomMD5()}?d=robohash';
-  }
-
-  void _onChangeEmail(String value) {
-    if (EmailValidator.validate(value)) {
-      setState(() {
-        _imageUrl = '$_urlBase${value.toMD5()}';
-      });
-    }
   }
 
   @override
@@ -145,16 +132,6 @@ class _FormularioPageState extends State<FormularioPage> {
                   key: _formKey,
                   child: Column(
                     children: <Widget>[
-                      Container(
-                        height: 100,
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: CircleAvatar(
-                            backgroundImage: NetworkImage(_imageUrl),
-                          ),
-                        ),
-                      ),
-                      Divider(),
                       TextFormField(
                         controller: _nomeController,
                         decoration: InputDecoration(
@@ -186,7 +163,6 @@ class _FormularioPageState extends State<FormularioPage> {
                         onSaved: (valor) {
                           _usuario.email = valor;
                         },
-                        onChanged: _onChangeEmail,
                       ),
                       SizedBox(height: 15),
                       TextFormField(
@@ -233,7 +209,7 @@ class _FormularioPageState extends State<FormularioPage> {
                             ),
                           ),
                           SizedBox(width: 10),
-                          RaisedButton.icon(
+                          FlatButton.icon(
                             icon: Icon(
                               Icons.search,
                             ),
@@ -257,14 +233,15 @@ class _FormularioPageState extends State<FormularioPage> {
                                 labelText: 'Rua',
                                 border: OutlineInputBorder(),
                               ),
-                              validator: (value) {
-                                if (value.length < 3 || value.length > 30) {
+                              validator: (valor) {
+                                if (valor.length < 3 || valor.length > 30) {
                                   return 'Rua inválida';
                                 }
                                 return null;
                               },
-                              onSaved: (newValue) =>
-                                  _usuario.endereco.rua = newValue,
+                              onSaved: (valor) {
+                                _usuario.endereco.rua = valor;
+                              },
                             ),
                           ),
                           SizedBox(width: 10),
@@ -294,20 +271,20 @@ class _FormularioPageState extends State<FormularioPage> {
                         children: <Widget>[
                           Expanded(
                             child: TextFormField(
-                              controller: _bairroController,
-                              decoration: InputDecoration(
-                                labelText: 'Bairro',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (value) {
-                                if (value.length < 3 || value.length > 30) {
-                                  return 'Bairro inválido';
-                                }
-                                return null;
-                              },
-                              onSaved: (newValue) =>
-                                  _usuario.endereco.bairro = newValue,
-                            ),
+                                controller: _bairroController,
+                                decoration: InputDecoration(
+                                  labelText: 'Bairro',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (value) {
+                                  if (value.length < 3 || value.length > 30) {
+                                    return 'Bairro inválido';
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  _usuario.endereco.bairro = value;
+                                }),
                           ),
                           SizedBox(width: 15),
                           Expanded(
@@ -317,8 +294,9 @@ class _FormularioPageState extends State<FormularioPage> {
                                 labelText: 'Cidade',
                                 border: OutlineInputBorder(),
                               ),
-                              onSaved: (newValue) =>
-                                  _usuario.endereco.cidade = newValue,
+                              onSaved: (value) {
+                                _usuario.endereco.cidade = value;
+                              },
                               validator: (value) {
                                 if (value.length < 3 || value.length > 30) {
                                   return 'Cidade inválida';
@@ -373,116 +351,14 @@ class _FormularioPageState extends State<FormularioPage> {
             ),
             Container(
               width: double.maxFinite,
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    flex: 1,
-                    child: OutlineButton(
-                      onPressed: () {
-                        _nomeController.clear();
-                        _emailController.clear();
-                        _cpfController.clear();
-                        _cepController.clear();
-                        _ruaController.clear();
-                        _numeroController.clear();
-                        _bairroController.clear();
-                        _cidadeController.clear();
-                        _ufController.clear();
-                        _paisController.clear();
-                        _formKey.currentState.reset();
-                        _usuario = Usuario();
-                      },
-                      child: Text('Limpar'),
-                      borderSide: BorderSide(
-                        color: Colors.black,
-                      ),
-                      textColor: Colors.black,
-                    ),
-                  ),
-                  SizedBox(
-                    width: 8,
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: OutlineButton(
-                      onPressed: _clickBotao,
-                      child: Text('Cadastrar'),
-                      borderSide: BorderSide(
-                        color: Colors.red,
-                      ),
-                      textColor: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _mostrarDados() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Dados: ${_usuario.nome}',
-          style: Theme.of(context).textTheme.headline6,
-        ),
-        actions: <Widget>[
-          FlatButton(
-            child: Text('OK'),
-            onPressed: () => Navigator.of(context).pop(),
-          )
-        ],
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Container(
-              height: 60,
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: CircleAvatar(
-                    backgroundImage: NetworkImage(_imageUrl),
-                  ),
+              child: OutlineButton(
+                onPressed: _clickBotao,
+                child: Text('Cadastrar'),
+                borderSide: BorderSide(
+                  color: Colors.red,
                 ),
+                textColor: Colors.red,
               ),
-            ),
-            Text(
-              'nome:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(_usuario.nome ?? ''),
-            SizedBox(
-              height: 8,
-            ),
-            Text(
-              'email:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(_usuario.email ?? ''),
-            SizedBox(
-              height: 8,
-            ),
-            Text(
-              'cpf:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(_usuario.cpf ?? ''),
-            SizedBox(
-              height: 8,
-            ),
-            Text(
-              'endereco:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text(
-              _usuario?.endereco?.toString() ?? '',
-              maxLines: 5,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
