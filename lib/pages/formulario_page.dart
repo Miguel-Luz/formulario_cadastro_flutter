@@ -132,80 +132,59 @@ class _FormularioPageState extends State<FormularioPage> {
                   key: _formKey,
                   child: Column(
                     children: <Widget>[
-                      TextFormField(
+                      buildTextFormField(
+                        label: 'Nome completo',
                         controller: _nomeController,
-                        decoration: InputDecoration(
-                          labelText: 'Nome completo',
-                          border: OutlineInputBorder(),
-                        ),
+                        onSaved: (valor) => _usuario.nome = valor,
                         validator: (valor) {
                           if (valor.length < 3) return 'Nome muito curto';
                           if (valor.length > 30) return 'Nome muito longo';
                           return null;
                         },
-                        onSaved: (valor) {
-                          _usuario.nome = valor;
-                        },
                       ),
                       SizedBox(height: 15),
-                      TextFormField(
+                      buildTextFormField(
                         controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
-                        ),
+                        label: 'Email',
                         validator: (valor) {
-                          if (!EmailValidator.validate(valor))
-                            return 'E-mail válido';
-
+                          if (!EmailValidator.validate(valor)) {
+                            return 'E-mail inválido';
+                          }
                           return null;
                         },
-                        onSaved: (valor) {
-                          _usuario.email = valor;
-                        },
+                        onSaved: (valor) => _usuario.email = valor,
                       ),
                       SizedBox(height: 15),
-                      TextFormField(
+                      buildTextFormField(
                         controller: _cpfController,
-                        decoration: InputDecoration(
-                          labelText: 'CPF',
-                          border: OutlineInputBorder(),
-                        ),
+                        label: 'CPF',
                         validator: (valor) {
                           if (!CnpjCpfBase.isCpfValid(valor))
                             return 'CPF inválido';
-
                           return null;
                         },
-                        onSaved: (valor) {
-                          _usuario.cpf = valor;
-                        },
-                        inputFormatters: [
+                        onSaved: (valor) => _usuario.cpf = valor,
+                        formatters: [
                           CnpjCpfFormatter(eDocumentType: EDocumentType.CPF)
                         ],
+                        keyboardType: TextInputType.number,
                       ),
                       SizedBox(height: 15),
                       Row(
                         children: <Widget>[
                           Expanded(
-                            child: TextFormField(
+                            child: buildTextFormField(
                               controller: _cepController,
-                              inputFormatters: [
-                                WhitelistingTextInputFormatter.digitsOnly
-                              ],
-                              decoration: InputDecoration(
-                                labelText: 'CEP',
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
+                              label: 'CEP',
+                              onSaved: (valor) => _usuario.endereco.cep = valor,
                               validator: (valor) {
                                 if (valor.length != 8) return 'CEP Inválido';
-
                                 return null;
                               },
-                              onSaved: (valor) {
-                                _usuario.endereco.cep = valor;
-                              },
+                              formatters: [
+                                WhitelistingTextInputFormatter.digitsOnly
+                              ],
+                              keyboardType: TextInputType.number,
                             ),
                           ),
                           SizedBox(width: 10),
@@ -227,41 +206,35 @@ class _FormularioPageState extends State<FormularioPage> {
                         children: <Widget>[
                           Expanded(
                             flex: 2,
-                            child: TextFormField(
+                            child: buildTextFormField(
                               controller: _ruaController,
-                              decoration: InputDecoration(
-                                labelText: 'Rua',
-                                border: OutlineInputBorder(),
-                              ),
+                              label: 'Rua',
                               validator: (valor) {
                                 if (valor.length < 3 || valor.length > 30) {
                                   return 'Rua inválida';
                                 }
                                 return null;
                               },
-                              onSaved: (valor) {
-                                _usuario.endereco.rua = valor;
-                              },
+                              onSaved: (valor) => _usuario.endereco.rua = valor,
                             ),
                           ),
                           SizedBox(width: 10),
                           Expanded(
-                            child: TextFormField(
+                            child: buildTextFormField(
+                              label: 'Número',
                               controller: _numeroController,
-                              decoration: InputDecoration(
-                                labelText: 'Número',
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
                               validator: (valor) {
                                 if (int.tryParse(valor) == null)
                                   return 'Número inválido';
-
                                 return null;
                               },
                               onSaved: (valor) {
                                 _usuario.endereco.numero = int.tryParse(valor);
                               },
+                              formatters: [
+                                WhitelistingTextInputFormatter.digitsOnly
+                              ],
+                              keyboardType: TextInputType.number,
                             ),
                           ),
                         ],
@@ -270,33 +243,26 @@ class _FormularioPageState extends State<FormularioPage> {
                       Row(
                         children: <Widget>[
                           Expanded(
-                            child: TextFormField(
-                                controller: _bairroController,
-                                decoration: InputDecoration(
-                                  labelText: 'Bairro',
-                                  border: OutlineInputBorder(),
-                                ),
-                                validator: (value) {
-                                  if (value.length < 3 || value.length > 30) {
-                                    return 'Bairro inválido';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  _usuario.endereco.bairro = value;
-                                }),
+                            child: buildTextFormField(
+                              controller: _bairroController,
+                              label: 'Bairro',
+                              validator: (value) {
+                                if (value.length < 3 || value.length > 30) {
+                                  return 'Bairro inválido';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) =>
+                                  _usuario.endereco.bairro = value,
+                            ),
                           ),
                           SizedBox(width: 15),
                           Expanded(
-                            child: TextFormField(
+                            child: buildTextFormField(
                               controller: _cidadeController,
-                              decoration: InputDecoration(
-                                labelText: 'Cidade',
-                                border: OutlineInputBorder(),
-                              ),
-                              onSaved: (value) {
-                                _usuario.endereco.cidade = value;
-                              },
+                              label: 'Cidade',
+                              onSaved: (value) =>
+                                  _usuario.endereco.cidade = value,
                               validator: (value) {
                                 if (value.length < 3 || value.length > 30) {
                                   return 'Cidade inválida';
@@ -311,35 +277,28 @@ class _FormularioPageState extends State<FormularioPage> {
                       Row(
                         children: <Widget>[
                           Expanded(
-                            child: TextFormField(
+                            child: buildTextFormField(
                               controller: _ufController,
-                              decoration: InputDecoration(
-                                labelText: 'UF',
-                                border: OutlineInputBorder(),
-                              ),
+                              label: 'UF',
                               validator: (valor) {
                                 if (valor.length != 2) return 'UF inválido';
                                 return null;
                               },
-                              onSaved: (newValue) =>
-                                  _usuario.endereco.uf = newValue,
+                              onSaved: (value) => _usuario.endereco.uf = value,
                             ),
                           ),
                           SizedBox(width: 15),
                           Expanded(
-                            child: TextFormField(
+                            child: buildTextFormField(
                               controller: _paisController,
-                              decoration: InputDecoration(
-                                labelText: 'Pais',
-                                border: OutlineInputBorder(),
-                              ),
+                              label: 'Pais',
                               validator: (valor) {
                                 if (valor.toUpperCase() != 'BRASIL')
                                   return 'País inválido';
                                 return null;
                               },
-                              onSaved: (newValue) =>
-                                  _usuario.endereco.pais = newValue,
+                              onSaved: (valor) =>
+                                  _usuario.endereco.pais = valor,
                             ),
                           ),
                         ],
@@ -363,6 +322,27 @@ class _FormularioPageState extends State<FormularioPage> {
           ],
         ),
       ),
+    );
+  }
+
+  TextFormField buildTextFormField({
+    String label,
+    TextEditingController controller,
+    String Function(String) validator,
+    void Function(String) onSaved,
+    List<TextInputFormatter> formatters,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(),
+      ),
+      validator: validator,
+      onSaved: onSaved,
+      inputFormatters: formatters,
+      keyboardType: keyboardType,
     );
   }
 }
