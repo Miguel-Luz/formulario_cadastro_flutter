@@ -3,10 +3,13 @@ import 'package:cnpj_cpf_helper/cnpj_cpf_helper.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:formulario_cadastro/entidades/endereco.dart';
+import 'package:formulario_cadastro/services/usuario_service.dart';
 import '../services/cep_service.dart';
 import '../entidades/usuario.dart';
 
 class FormularioPage extends StatefulWidget {
+  static String routeName = '/formulario';
   @override
   _FormularioPageState createState() => _FormularioPageState();
 }
@@ -14,8 +17,9 @@ class FormularioPage extends StatefulWidget {
 class _FormularioPageState extends State<FormularioPage> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _formKey = GlobalKey<FormState>();
+  final _usuarioService = UsuarioService();
 
-  Usuario _usuario = Usuario();
+  Usuario _usuario = Usuario.empty();
   final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
   final _cpfController = TextEditingController();
@@ -30,6 +34,25 @@ class _FormularioPageState extends State<FormularioPage> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    var _args = ModalRoute.of(context).settings.arguments;
+    if (_args != null && _args is Usuario) {
+      _usuario = _args;
+      _nomeController.text = _usuario.nome;
+      _emailController.text = _usuario.email;
+      _cpfController.text = _usuario.cpf;
+      _cepController.text = _usuario.endereco?.cep;
+      _ruaController.text = _usuario.endereco?.rua;
+      _numeroController.text = _usuario.endereco?.numero?.toString();
+      _bairroController.text = _usuario.endereco?.bairro;
+      _cidadeController.text = _usuario.endereco?.cidade;
+      _ufController.text = _usuario.endereco?.uf;
+      _paisController.text = _usuario.endereco?.pais;
+    }
   }
 
   @override
@@ -109,9 +132,16 @@ class _FormularioPageState extends State<FormularioPage> {
       _mostrarSnackBar('Informações inválidas');
       return;
     }
-
     _formKey.currentState.save();
-    _mostrarSnackBar('Dados válidos');
+
+    _usuarioService.salvar(_usuario).then((value) {
+      if (value) Navigator.of(context).pop(true);
+      _mostrarSnackBar('Ops! algo deu errado...');
+    }, onError: _handleError).catchError(_handleError);
+  }
+
+  void _handleError(dynamic error) {
+    _mostrarSnackBar(error?.toString() ?? 'Erro indefinido');
   }
 
   @override

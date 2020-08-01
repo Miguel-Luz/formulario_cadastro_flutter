@@ -5,7 +5,7 @@ class CepService {
   Future<Endereco> obtemCep(String cep) async {
     try {
       var _response = await Dio().get('https://viacep.com.br/ws/$cep/json/');
-      var retorno = Endereco.fromMap(_response.data);
+      var retorno = Endereco.fromViaCep(_response.data);
       return retorno;
     } on DioError catch (e) {
       throw Exception(e.message);
