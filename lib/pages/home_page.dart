@@ -22,11 +22,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _carregarUsuarios() {
-    _usuarioService
-        .obtemTodos()
+    _refresh()
         .then((value) => setState(() => _usuarios = value),
             onError: _handleError)
         .catchError(_handleError);
+  }
+
+  Future<List<Usuario>> _refresh() {
+    return _usuarioService.obtemTodos();
   }
 
   void _handleError(dynamic error) {
@@ -124,8 +127,8 @@ class _HomePageState extends State<HomePage> {
       child: ListTile(
         onTap: () {
           Navigator.of(context)
-              .pushNamed(FormularioPage.routeName, arguments: _usuario)
-              .then(_handleRetornoFormulario);
+              .pushNamed(FormularioPage.routeName, arguments: _usuario);
+          // .then(_handleRetornoFormulario);
         },
         leading: Text('#${_usuario.id}'),
         title: Text(_usuario.nome),
@@ -151,10 +154,18 @@ class _HomePageState extends State<HomePage> {
         },
         child: Icon(Icons.add),
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.zero,
-        itemCount: _usuarios.length,
-        itemBuilder: (context, index) => _itemTile(index),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          var _value = await _refresh();
+          setState(() {
+            _usuarios = _value;
+          });
+        },
+        child: ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: _usuarios.length,
+          itemBuilder: (context, index) => _itemTile(index),
+        ),
       ),
     );
   }
