@@ -127,14 +127,24 @@ class _HomePageState extends State<HomePage> {
       child: ListTile(
         onTap: () {
           Navigator.of(context)
-              .pushNamed(FormularioPage.routeName, arguments: _usuario);
-          // .then(_handleRetornoFormulario);
+              .pushNamed(FormularioPage.routeName, arguments: _usuario)
+              .then(_handleRetornoFormulario);
         },
         leading: Text('#${_usuario.id}'),
         title: Text(_usuario.nome),
         subtitle: Text(_usuario.toString()),
         isThreeLine: true,
       ),
+      /* child: ExpansionTile(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(_usuario.toString()),
+          ),
+        ],
+        leading: Text('#${_usuario.id}'),
+        title: Text(_usuario.nome),
+      ), */
     );
   }
 
